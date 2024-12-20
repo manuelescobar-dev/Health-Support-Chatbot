@@ -1,5 +1,5 @@
 # Health-Support-Chatbot-Demo
-The complete description is in the google doc...
+The complete description can be found in the Google Doc.
 
 ## Structure
 - `client/`: contains the flutter web application.
