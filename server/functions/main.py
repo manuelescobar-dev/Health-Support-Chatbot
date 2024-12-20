@@ -3,32 +3,24 @@ from firebase_admin import initialize_app, firestore
 from openai import OpenAI
 from datetime import datetime
 import json
-from pydantic import BaseModel
+from firebase_functions.params import SecretParam
+import google.cloud.firestore
 
 app = initialize_app()
-client = OpenAI(
-    api_key="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"
-)
-
-# Initialize Firestore client once and reuse it across functions
-firestore_client: firestore.Client = firestore.client()
+OPENAI_API_KEY = SecretParam("OPENAI_API_KEY")
 
 
-@https_fn.on_request()
-def hello_world(req: https_fn.Request) -> https_fn.Response:
-    return https_fn.Response("Hello, World!", status=200)
-
-
-@https_fn.on_request()
+@https_fn.on_request(secrets=[OPENAI_API_KEY])
 def get_response(req: https_fn.Request) -> https_fn.Response:
     try:
+        client = OpenAI()
         # Parse the userId from the request body.
-        body = req.get_json()
-        user_id = body.get("userId")
+        user_id = req.args.get("userId")
 
         if not user_id:
             return https_fn.Response("Missing required parameter: userId", status=400)
 
+        firestore_client: google.cloud.firestore.Client = firestore.client()
         # Query the appointments collection for documents matching the userId.
         appointments_query = firestore_client.collection("appointments").where(
             "userId", "==", user_id
@@ -50,7 +42,7 @@ def get_response(req: https_fn.Request) -> https_fn.Response:
 
     try:
         # Parse the user's message from the request body.
-        message = body.get("message")
+        message = req.args.get("message")
 
         if not message:
             return https_fn.Response("Missing required parameter: message", status=400)
@@ -132,6 +124,8 @@ def add_appointment(req: https_fn.Request) -> https_fn.Response:
                     status=400,
                 )
 
+        firestore_client: google.cloud.firestore.Client = firestore.client()
+
         # Add the new appointment to the appointments collection.
         _, doc_ref = firestore_client.collection("appointments").add(appointment_data)
 
@@ -151,6 +145,8 @@ def get_appointments_by_user(req: https_fn.Request) -> https_fn.Response:
 
         if not user_id:
             return https_fn.Response("Missing required parameter: userId", status=400)
+
+        firestore_client: google.cloud.firestore.Client = firestore.client()
 
         # Query the appointments collection for documents matching the userId.
         appointments_query = (
