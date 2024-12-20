@@ -70,11 +70,20 @@ def get_response(req: https_fn.Request) -> https_fn.Response:
         response_content = completion.choices[0].message.content
 
         # Return the response as JSON
-        return https_fn.Response(
+        response = https_fn.Response(
             response_content,
             status=200,
             mimetype="application/json",
         )
+        # Add CORS headers
+        response.headers.add(
+            "Access-Control-Allow-Origin", "*"
+        )  # Replace '*' with your domain if needed
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add(
+            "Access-Control-Allow-Headers", "Content-Type, Authorization"
+        )
+        return response
 
     except Exception as e:
         # Handle any unexpected errors and return an appropriate error response
